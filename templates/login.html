@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login | Crop Yield Prediction</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="login-page">
+
+    <div class="login-container">
+
+        <!-- Left Panel -->
+        <div class="login-left">
+            <div class="login-left-content">
+                <div class="brand-icon">🌾</div>
+                <h1>Crop Yield<br>Prediction System</h1>
+                <p>Predict agricultural yield using Machine Learning based on rainfall, temperature, and crop type.</p>
+                <div class="features">
+                    <div class="feature-item">
+                        <i class="fas fa-brain"></i>
+                        <span>ML Powered Predictions</span>
+                    </div>
+                    <div class="feature-item">
+                        <i class="fas fa-chart-bar"></i>
+                        <span>Visual Analytics</span>
+                    </div>
+                    <div class="feature-item">
+                        <i class="fas fa-history"></i>
+                        <span>Prediction History</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Panel: Login Form -->
+        <div class="login-right">
+            <div class="login-form-box">
+                <h2>Welcome Back 👋</h2>
+                <p class="login-subtitle">Sign in to your account</p>
+
+                <!-- Error Message -->
+                {% if error %}
+                <div class="alert alert-error">
+                    <i class="fas fa-exclamation-circle"></i> {{ error }}
+                </div>
+                {% endif %}
+
+                <!-- Login Form -->
+                <form method="POST" action="/login">
+
+                    <div class="form-group">
+                        <label for="username">
+                            <i class="fas fa-user"></i> Username
+                        </label>
+                        <input
+                            type="text"
+                            id="username"
+                            name="username"
+                            placeholder="Enter your username"
+                            required
+                            autocomplete="off"
+                        />
+                    </div>
+
+                    <div class="form-group">
+                        <label for="password">
+                            <i class="fas fa-lock"></i> Password
+                        </label>
+                        <div class="password-wrapper">
+                            <input
+                                type="password"
+                                id="password"
+                                name="password"
+                                placeholder="Enter your password"
+                                required
+                            />
+                            <span class="toggle-password" onclick="togglePassword()">
+                                <i class="fas fa-eye" id="eye-icon"></i>
+                            </span>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn-login">
+                        <i class="fas fa-sign-in-alt"></i> Login
+                    </button>
+
+                </form>
+
+                <div class="login-hint">
+                    <i class="fas fa-info-circle"></i>
+                    Default: <strong>admin</strong> / <strong>admin123</strong>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        function togglePassword() {
+            const input   = document.getElementById("password");
+            const icon    = document.getElementById("eye-icon");
+            if (input.type === "password") {
+                input.type = "text";
+                icon.classList.replace("fa-eye", "fa-eye-slash");
+            } else {
+                input.type = "password";
+                icon.classList.replace("fa-eye-slash", "fa-eye");
+            }
+        }
+    </script>
+
+</body>
+</html>

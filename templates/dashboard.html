@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard | Crop Yield Prediction</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="main-page">
+
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="nav-brand">
+            <span class="nav-icon">🌾</span>
+            <span>Crop Yield Prediction</span>
+        </div>
+        <div class="nav-links">
+            <a href="/dashboard" class="nav-link active"><i class="fas fa-home"></i> Dashboard</a>
+            <a href="/predict"   class="nav-link"><i class="fas fa-seedling"></i> Predict</a>
+            <a href="/analytics" class="nav-link"><i class="fas fa-chart-bar"></i> Analytics</a>
+            <a href="/logout"    class="nav-link logout"><i class="fas fa-sign-out-alt"></i> Logout</a>
+        </div>
+        <div class="nav-user">
+            <i class="fas fa-user-circle"></i> {{ username }}
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="main-content">
+
+        <!-- Page Header -->
+        <div class="page-header">
+            <h1><i class="fas fa-home"></i> Dashboard</h1>
+            <p>Welcome back, <strong>{{ username }}</strong>! Here are your recent predictions.</p>
+        </div>
+
+        <!-- Stats Cards -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon green"><i class="fas fa-list"></i></div>
+                <div class="stat-info">
+                    <h3>{{ predictions | length }}</h3>
+                    <p>Total Predictions</p>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon blue"><i class="fas fa-seedling"></i></div>
+                <div class="stat-info">
+                    <h3>
+                        {% if predictions %}
+                            {{ predictions | map(attribute='crop') | list | unique | list | length }}
+                        {% else %}
+                            0
+                        {% endif %}
+                    </h3>
+                    <p>Crops Predicted</p>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon amber"><i class="fas fa-weight"></i></div>
+                <div class="stat-info">
+                    <h3>
+                        {% if predictions %}
+                            {{ (predictions | map(attribute='yield') | list | sum / predictions | length) | round(2) }}
+                        {% else %}
+                            0
+                        {% endif %}
+                    </h3>
+                    <p>Avg Yield (tons)</p>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon coral"><i class="fas fa-clock"></i></div>
+                <div class="stat-info">
+                    <h3>
+                        {% if predictions %}
+                            {{ predictions[0]['created_at'][:10] }}
+                        {% else %}
+                            N/A
+                        {% endif %}
+                    </h3>
+                    <p>Last Prediction</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Action -->
+        <div class="quick-action">
+            <a href="/predict" class="btn-primary">
+                <i class="fas fa-plus"></i> New Prediction
+            </a>
+            <a href="/analytics" class="btn-secondary">
+                <i class="fas fa-chart-bar"></i> View Analytics
+            </a>
+        </div>
+
+        <!-- Predictions Table -->
+        <div class="table-card">
+            <div class="table-header">
+                <h2><i class="fas fa-history"></i> Prediction History</h2>
+                <input
+                    type="text"
+                    id="searchInput"
+                    placeholder="Search by crop..."
+                    onkeyup="filterTable()"
+                    class="search-input"
+                />
+            </div>
+
+            {% if predictions %}
+            <div class="table-wrapper">
+                <table id="predictionTable">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th><i class="fas fa-seedling"></i> Crop</th>
+                            <th><i class="fas fa-cloud-rain"></i> Rainfall (mm)</th>
+                            <th><i class="fas fa-temperature-high"></i> Temp (°C)</th>
+                            <th><i class="fas fa-ruler-combined"></i> Area (ha)</th>
+                            <th><i class="fas fa-weight"></i> Yield (tons)</th>
+                            <th><i class="fas fa-calendar"></i> Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for p in predictions %}
+                        <tr>
+                            <td>{{ loop.index }}</td>
+                            <td><span class="crop-badge">{{ p['crop'] }}</span></td>
+                            <td>{{ p['rainfall'] }}</td>
+                            <td>{{ p['temperature'] }}</td>
+                            <td>{{ p['area'] }}</td>
+                            <td><strong>{{ p['yield'] }}</strong></td>
+                            <td>{{ p['created_at'][:10] }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <div class="empty-icon">🌱</div>
+                <h3>No predictions yet</h3>
+                <p>Go to the Predict page to make your first crop yield prediction!</p>
+                <a href="/predict" class="btn-primary">Make First Prediction</a>
+            </div>
+            {% endif %}
+        </div>
+
+    </div>
+
+    <script>
+        // Filter table by crop name
+        function filterTable() {
+            const input  = document.getElementById("searchInput").value.toLowerCase();
+            const rows   = document.querySelectorAll("#predictionTable tbody tr");
+            rows.forEach(row => {
+                const crop = row.cells[1].textContent.toLowerCase();
+                row.style.display = crop.includes(input) ? "" : "none";
+            });
+        }
+    </script>
+
+</body>
+</html>

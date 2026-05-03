@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Predict | Crop Yield Prediction</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="main-page">
+
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="nav-brand">
+            <span class="nav-icon">🌾</span>
+            <span>Crop Yield Prediction</span>
+        </div>
+        <div class="nav-links">
+            <a href="/dashboard" class="nav-link"><i class="fas fa-home"></i> Dashboard</a>
+            <a href="/predict"   class="nav-link active"><i class="fas fa-seedling"></i> Predict</a>
+            <a href="/analytics" class="nav-link"><i class="fas fa-chart-bar"></i> Analytics</a>
+            <a href="/logout"    class="nav-link logout"><i class="fas fa-sign-out-alt"></i> Logout</a>
+        </div>
+        <div class="nav-user">
+            <i class="fas fa-user-circle"></i> {{ username }}
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="main-content">
+
+        <!-- Page Header -->
+        <div class="page-header">
+            <h1><i class="fas fa-seedling"></i> Crop Yield Prediction</h1>
+            <p>Enter the crop details below to get an instant yield prediction.</p>
+        </div>
+
+        <div class="predict-grid">
+
+            <!-- Prediction Form -->
+            <div class="predict-form-card">
+                <h2><i class="fas fa-sliders-h"></i> Input Parameters</h2>
+
+                <!-- Error -->
+                {% if error %}
+                <div class="alert alert-error">
+                    <i class="fas fa-exclamation-circle"></i> {{ error }}
+                </div>
+                {% endif %}
+
+                <form method="POST" action="/predict" id="predictForm">
+
+                    <!-- Crop Type -->
+                    <div class="form-group">
+                        <label><i class="fas fa-seedling"></i> Crop Type</label>
+                        <select name="crop" required>
+                            <option value="" disabled selected>-- Select a Crop --</option>
+                            {% for crop in crops %}
+                            <option value="{{ crop }}">{{ crop }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- Rainfall -->
+                    <div class="form-group">
+                        <label><i class="fas fa-cloud-rain"></i> Rainfall (mm)</label>
+                        <input
+                            type="number"
+                            name="rainfall"
+                            placeholder="e.g. 1200"
+                            min="0"
+                            max="5000"
+                            step="0.1"
+                            required
+                        />
+                        <span class="input-hint">Annual rainfall in millimeters</span>
+                    </div>
+
+                    <!-- Temperature -->
+                    <div class="form-group">
+                        <label><i class="fas fa-temperature-high"></i> Temperature (°C)</label>
+                        <input
+                            type="number"
+                            name="temperature"
+                            placeholder="e.g. 25"
+                            min="-10"
+                            max="60"
+                            step="0.1"
+                            required
+                        />
+                        <span class="input-hint">Average temperature in Celsius</span>
+                    </div>
+
+                    <!-- Area -->
+                    <div class="form-group">
+                        <label><i class="fas fa-ruler-combined"></i> Area (hectares)</label>
+                        <input
+                            type="number"
+                            name="area"
+                            placeholder="e.g. 2.5"
+                            min="0.1"
+                            max="1000"
+                            step="0.01"
+                            required
+                        />
+                        <span class="input-hint">Land area in hectares</span>
+                    </div>
+
+                    <button type="submit" class="btn-predict" id="predictBtn">
+                        <i class="fas fa-magic"></i> Predict Yield
+                    </button>
+
+                </form>
+            </div>
+
+            <!-- Result Panel -->
+            <div class="predict-result-card">
+                <h2><i class="fas fa-chart-line"></i> Prediction Result</h2>
+
+                {% if result %}
+                <!-- Show Result -->
+                <div class="result-box success">
+                    <div class="result-icon">🌾</div>
+                    <h3>Predicted Yield</h3>
+                    <div class="result-value">{{ result }} <span>tons</span></div>
+                    <p class="result-note">
+                        Based on your inputs, the estimated crop yield is
+                        <strong>{{ result }} tons</strong>.
+                        This has been saved to your dashboard.
+                    </p>
+                    <a href="/dashboard" class="btn-secondary">
+                        <i class="fas fa-home"></i> View Dashboard
+                    </a>
+                </div>
+
+                {% else %}
+                <!-- Placeholder -->
+                <div class="result-placeholder">
+                    <div class="placeholder-icon">🤖</div>
+                    <h3>Awaiting Input</h3>
+                    <p>Fill in the form on the left and click <strong>Predict Yield</strong> to see the result here.</p>
+
+                    <div class="tips-box">
+                        <h4><i class="fas fa-lightbulb"></i> Tips</h4>
+                        <ul>
+                            <li>Rice grows best with 900–2000mm rainfall</li>
+                            <li>Wheat prefers 10–25°C temperature</li>
+                            <li>Larger area = higher total yield</li>
+                            <li>Sugarcane yields are measured in higher ranges</li>
+                        </ul>
+                    </div>
+                </div>
+                {% endif %}
+
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // Show loading state on form submit
+        document.getElementById("predictForm").addEventListener("submit", function () {
+            const btn = document.getElementById("predictBtn");
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Predicting...';
+            btn.disabled = true;
+        });
+    </script>
+
+</body>
+</html>

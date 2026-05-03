@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analytics | Crop Yield Prediction</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="main-page">
+
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="nav-brand">
+            <span class="nav-icon">🌾</span>
+            <span>Crop Yield Prediction</span>
+        </div>
+        <div class="nav-links">
+            <a href="/dashboard" class="nav-link"><i class="fas fa-home"></i> Dashboard</a>
+            <a href="/predict"   class="nav-link"><i class="fas fa-seedling"></i> Predict</a>
+            <a href="/analytics" class="nav-link active"><i class="fas fa-chart-bar"></i> Analytics</a>
+            <a href="/logout"    class="nav-link logout"><i class="fas fa-sign-out-alt"></i> Logout</a>
+        </div>
+        <div class="nav-user">
+            <i class="fas fa-user-circle"></i> {{ username }}
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="main-content">
+
+        <!-- Page Header -->
+        <div class="page-header">
+            <h1><i class="fas fa-chart-bar"></i> Analytics</h1>
+            <p>Visual insights from your crop yield predictions.</p>
+        </div>
+
+        {% if crop_counts %}
+
+        <!-- Charts Grid -->
+        <div class="charts-grid">
+
+            <!-- Bar Chart: Average Yield per Crop -->
+            <div class="chart-card">
+                <h2><i class="fas fa-chart-bar"></i> Average Yield per Crop</h2>
+                <p class="chart-desc">Comparison of average predicted yield (tons) across different crops.</p>
+                <canvas id="barChart"></canvas>
+            </div>
+
+            <!-- Pie Chart: Prediction Count per Crop -->
+            <div class="chart-card">
+                <h2><i class="fas fa-chart-pie"></i> Predictions by Crop</h2>
+                <p class="chart-desc">Distribution of how many times each crop was predicted.</p>
+                <canvas id="pieChart"></canvas>
+            </div>
+
+            <!-- Line Chart: Yield Trend over Time -->
+            <div class="chart-card full-width">
+                <h2><i class="fas fa-chart-line"></i> Yield Trend Over Time</h2>
+                <p class="chart-desc">How predicted yield values have changed over your prediction history.</p>
+                <canvas id="lineChart"></canvas>
+            </div>
+
+        </div>
+
+        {% else %}
+        <!-- Empty State -->
+        <div class="empty-state">
+            <div class="empty-icon">📊</div>
+            <h3>No data to display</h3>
+            <p>Make some predictions first to see your analytics charts here!</p>
+            <a href="/predict" class="btn-primary">
+                <i class="fas fa-seedling"></i> Make a Prediction
+            </a>
+        </div>
+        {% endif %}
+
+    </div>
+
+    <!-- Pass Flask data to JavaScript -->
+    <script>
+        // Data from Flask backend
+        const cropCounts = {{ crop_counts | tojson }};
+        const avgYields  = {{ avg_yields  | tojson }};
+        const trendData  = {{ trend_data  | tojson }};
+
+        const chartColors = [
+            "#4CAF50", "#2196F3", "#FF9800", "#E91E63",
+            "#9C27B0", "#00BCD4", "#FF5722", "#795548"
+        ];
+
+        // ─────────────────────────────────────────────
+        // Bar Chart: Average Yield per Crop
+        // ─────────────────────────────────────────────
+        const barLabels = Object.keys(avgYields);
+        const barValues = Object.values(avgYields);
+
+        new Chart(document.getElementById("barChart"), {
+            type: "bar",
+            data: {
+                labels: barLabels,
+                datasets: [{
+                    label: "Avg Yield (tons)",
+                    data: barValues,
+                    backgroundColor: chartColors.slice(0, barLabels.length),
+                    borderRadius: 8,
+                    borderSkipped: false,
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: ctx => ` ${ctx.parsed.y} tons`
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: "rgba(0,0,0,0.05)" },
+                        ticks: { font: { family: "Poppins" } }
+                    },
+                    x: {
+                        grid: { display: false },
+                        ticks: { font: { family: "Poppins" } }
+                    }
+                }
+            }
+        });
+
+        // ─────────────────────────────────────────────
+        // Pie Chart: Prediction count per crop
+        // ─────────────────────────────────────────────
+        const pieLabels = Object.keys(cropCounts);
+        const pieValues = Object.values(cropCounts);
+
+        new Chart(document.getElementById("pieChart"), {
+            type: "doughnut",
+            data: {
+                labels: pieLabels,
+                datasets: [{
+                    data: pieValues,
+                    backgroundColor: chartColors.slice(0, pieLabels.length),
+                    borderWidth: 2,
+                    borderColor: "#fff"
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: "bottom",
+                        labels: { font: { family: "Poppins" }, padding: 16 }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: ctx => ` ${ctx.label}: ${ctx.parsed} predictions`
+                        }
+                    }
+                }
+            }
+        });
+
+        // ─────────────────────────────────────────────
+        // Line Chart: Yield trend over time
+        // ─────────────────────────────────────────────
+        const lineLabels = trendData.map(d => d.date);
+        const lineValues = trendData.map(d => d.yield);
+
+        new Chart(document.getElementById("lineChart"), {
+            type: "line",
+            data: {
+                labels: lineLabels,
+                datasets: [{
+                    label: "Yield (tons)",
+                    data: lineValues,
+                    borderColor: "#4CAF50",
+                    backgroundColor: "rgba(76,175,80,0.1)",
+                    borderWidth: 2.5,
+                    pointBackgroundColor: "#4CAF50",
+                    pointRadius: 5,
+                    tension: 0.4,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: ctx => ` ${ctx.parsed.y} tons`
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: "rgba(0,0,0,0.05)" },
+                        ticks: { font: { family: "Poppins" } }
+                    },
+                    x: {
+                        grid: { display: false },
+                        ticks: {
+                            font: { family: "Poppins" },
+                            maxTicksLimit: 10
+                        }
+                    }
+                }
+            }
+        });
+    </script>
+
+</body>
+</html>
