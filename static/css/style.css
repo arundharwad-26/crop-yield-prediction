@@ -796,3 +796,16 @@ tbody td {
         display: none;
     }
 }
+/* Success Alert */
+.alert-success {
+    background: #e8f8f0;
+    color: #27ae60;
+    border: 1px solid #c3e6cb;
+    padding: 12px 16px;
+    border-radius: 10px;
+    font-size: 13px;
+    margin-bottom: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}

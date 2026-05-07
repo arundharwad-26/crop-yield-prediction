@@ -2,7 +2,7 @@
 app.py
 ------
 Main Flask application for the Crop Yield Prediction System.
-Handles all routes: login, dashboard, prediction, analytics, logout.
+Handles all routes: login, register, dashboard, prediction, analytics, logout.
 
 Usage:
     python app.py
@@ -16,7 +16,7 @@ import os
 from datetime import datetime
 
 app = Flask(__name__)
-app.secret_key = "crop_yield_secret_key_2024"  # Required for session handling
+app.secret_key = "crop_yield_secret_key_2024"
 
 # ─────────────────────────────────────────────
 # Load ML Model
@@ -34,11 +34,9 @@ CROPS         = model_data["crops"]
 DB_PATH = "database.db"
 
 def init_db():
-    """Create tables if they don't exist."""
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
 
-    # Users table
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS users (
             id       INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -47,7 +45,6 @@ def init_db():
         )
     """)
 
-    # Predictions table
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS predictions (
             id          INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -61,7 +58,6 @@ def init_db():
         )
     """)
 
-    # Insert a default admin user if not exists
     cursor.execute("""
         INSERT OR IGNORE INTO users (username, password)
         VALUES (?, ?)
@@ -75,7 +71,7 @@ def init_db():
 # ─────────────────────────────────────────────
 def get_db():
     conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row   # allows dict-like row access
+    conn.row_factory = sqlite3.Row
     return conn
 
 # ─────────────────────────────────────────────
@@ -107,9 +103,45 @@ def login():
             session["username"] = username
             return redirect(url_for("dashboard"))
         else:
-            error = "Invalid username or password. Try admin / admin123"
+            error = "Invalid username or password."
 
     return render_template("login.html", error=error)
+
+# ─────────────────────────────────────────────
+# Route: Register
+# ─────────────────────────────────────────────
+@app.route("/register", methods=["GET", "POST"])
+def register():
+    error   = None
+    success = None
+
+    if request.method == "POST":
+        username = request.form.get("username", "").strip()
+        password = request.form.get("password", "").strip()
+        confirm  = request.form.get("confirm",  "").strip()
+
+        if not username or not password:
+            error = "Username and password are required."
+        elif len(username) < 3:
+            error = "Username must be at least 3 characters."
+        elif len(password) < 6:
+            error = "Password must be at least 6 characters."
+        elif password != confirm:
+            error = "Passwords do not match."
+        else:
+            try:
+                conn = get_db()
+                conn.execute(
+                    "INSERT INTO users (username, password) VALUES (?, ?)",
+                    (username, password)
+                )
+                conn.commit()
+                conn.close()
+                success = "Account created successfully! You can now login."
+            except sqlite3.IntegrityError:
+                error = "Username already exists. Please choose another."
+
+    return render_template("register.html", error=error, success=success)
 
 # ─────────────────────────────────────────────
 # Route: Logout
@@ -156,15 +188,12 @@ def predict():
             temperature = float(request.form.get("temperature"))
             area        = float(request.form.get("area"))
 
-            # Encode crop name to number
             crop_encoded = label_encoder.transform([crop])[0]
 
-            # Make prediction
-            features     = np.array([[crop_encoded, rainfall, temperature, area]])
-            predicted    = model.predict(features)[0]
-            result       = round(predicted, 2)
+            features  = np.array([[crop_encoded, rainfall, temperature, area]])
+            predicted = model.predict(features)[0]
+            result    = round(predicted, 2)
 
-            # Save to database
             conn = get_db()
             conn.execute("""
                 INSERT INTO predictions (username, crop, rainfall, temperature, area, yield, created_at)
@@ -201,28 +230,23 @@ def analytics():
     ).fetchall()
     conn.close()
 
-    # Prepare data for charts
-    crop_counts  = {}   # for pie chart
-    crop_yields  = {}   # for bar chart (avg yield per crop)
-    trend_data   = []   # for line chart (yield over time)
+    crop_counts = {}
+    crop_yields = {}
+    trend_data  = []
 
     for p in predictions:
-        crop  = p["crop"]
+        crop   = p["crop"]
         yield_ = p["yield"]
-        date  = p["created_at"][:10]   # YYYY-MM-DD
+        date   = p["created_at"][:10]
 
-        # Pie chart data
         crop_counts[crop] = crop_counts.get(crop, 0) + 1
 
-        # Bar chart data (collect yields per crop)
         if crop not in crop_yields:
             crop_yields[crop] = []
         crop_yields[crop].append(yield_)
 
-        # Line chart data
         trend_data.append({"date": date, "yield": yield_})
 
-    # Average yield per crop
     avg_yields = {
         crop: round(sum(vals) / len(vals), 2)
         for crop, vals in crop_yields.items()
@@ -235,7 +259,7 @@ def analytics():
                            trend_data=trend_data)
 
 # ─────────────────────────────────────────────
-# API: Get all predictions as JSON (for charts)
+# API: Get all predictions as JSON
 # ─────────────────────────────────────────────
 @app.route("/api/predictions")
 def api_predictions():
@@ -256,5 +280,5 @@ def api_predictions():
 # Run the app
 # ─────────────────────────────────────────────
 if __name__ == "__main__":
-    init_db()    # Create DB and tables on startup
+    init_db()
     app.run(debug=True)
